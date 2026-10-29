@@ -30,7 +30,7 @@ public class OrdinateurServiceLinqTests
     public async Task ObtenirDisponiblesAsync_RetourneSeulementStockSuperieurAZero()
     {
         var context = ObtenirContextTest();
-        var service = new OrdinateurService(context);
+        var service = new OrdinateurService(context, new JournalService());
 
         var resultats = await service.ObtenirDisponiblesAsync();
 
@@ -42,7 +42,7 @@ public class OrdinateurServiceLinqTests
     public async Task ObtenirParMarqueAsync_FiltreCorrectementParMarque()
     {
         var context = ObtenirContextTest();
-        var service = new OrdinateurService(context);
+        var service = new OrdinateurService(context, new JournalService());
 
         var resultats = await service.ObtenirParMarqueAsync("dell");
 
@@ -54,7 +54,7 @@ public class OrdinateurServiceLinqTests
     public async Task ObtenirTriesParPrixDecroissantAsync_TrieDuPlusCherAuMoinsCher()
     {
         var context = ObtenirContextTest();
-        var service = new OrdinateurService(context);
+        var service = new OrdinateurService(context, new JournalService());
 
         var resultats = await service.ObtenirTriesParPrixDecroissantAsync();
 
