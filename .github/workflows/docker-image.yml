@@ -7,7 +7,7 @@ on:
       - main
 
 env:
-  DOCKER_ACCOUNT: ${{ secrets.maelle26 }}
+  DOCKER_ACCOUNT: maelle26
 
 jobs:
   tests:
