@@ -1,0 +1,86 @@
+@page "/ordinateurs"
+@using System.Net.Http.Headers
+@inject HttpClient Http
+@inject Blazored.SessionStorage.ISessionStorageService Session
+
+<PageTitle>Ordinateurs</PageTitle>
+
+<h3>Liste des ordinateurs</h3>
+
+@if (chargement)
+{
+    <p><em>Chargement des données...</em></p>
+}
+else if (!string.IsNullOrEmpty(erreur))
+{
+    <div class="alert alert-danger">@erreur</div>
+}
+else if (ordinateurs == null || !ordinateurs.Any())
+{
+    <p>Aucun ordinateur trouvé.</p>
+}
+else
+{
+    <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th>Nom</th>
+                <th>Prix</th>
+                <th>Devise</th>
+                <th>Vendu</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var ordi in ordinateurs)
+            {
+                <tr>
+                    <td>@ordi.Nom</td>
+                    <td>@ordi.Prix.ToString("F2")</td>
+                    <td>EUR</td>
+                    <td>@(ordi.Vendu ? "Oui" : "Non")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<Ordinateur>? ordinateurs;
+    private bool chargement = true;
+    private string erreur = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Récupération du jeton JWT mémorisé en session lors du login
+            var token = await Session.GetItemAsStringAsync("token");
+            if (!string.IsNullOrEmpty(token))
+            {
+                Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            // Appel via la Gateway (port 5010)
+            ordinateurs = await Http.GetFromJsonAsync<List<Ordinateur>>("api/ordinateurs");
+        }
+        catch (HttpRequestException ex)
+        {
+            erreur = $"Erreur HTTP : {ex.StatusCode} - Vérifie que tu es connecté et que la Gateway/API tourne.";
+        }
+        catch (Exception ex)
+        {
+            erreur = $"Erreur : {ex.Message}";
+        }
+        finally
+        {
+            chargement = false;
+        }
+    }
+
+    private class Ordinateur
+    {
+        public string Nom { get; set; } = string.Empty;
+        public decimal Prix { get; set; }
+        public bool Vendu { get; set; }
+    }
+}

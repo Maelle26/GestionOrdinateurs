@@ -1,0 +1,42 @@
+@page "/login"
+@inject HttpClient Http
+@inject Blazored.SessionStorage.ISessionStorageService Session
+@inject NavigationManager Nav
+
+<h3>Connexion</h3>
+
+<input @bind="login" placeholder="ex: user1" class="form-control w-25 mb-2" />
+<button class="btn btn-primary" @onclick="SeConnecter">Se connecter</button>
+
+@if (!string.IsNullOrEmpty(erreur))
+{
+    <p class="text-danger mt-2">@erreur</p>
+}
+
+@code {
+    private string login = "";
+    private string erreur = "";
+
+    private async Task SeConnecter()
+    {
+        erreur = "";
+        try
+        {
+            var res = await Http.PostAsJsonAsync("https://localhost:5001/api/authentication/login", login);
+            if (!res.IsSuccessStatusCode)
+            {
+                erreur = "L'utilisateur n'existe pas.";
+                return;
+            }
+            var data = await res.Content.ReadFromJsonAsync<AuthResult>();
+            await Session.SetItemAsStringAsync("token", data!.Token);
+            Nav.NavigateTo("/");
+        }
+        catch (Exception ex)
+        {
+            erreur = $"Erreur : {ex.Message}";
+        }
+    }
+
+    private class AuthResult { public string Token { get; set; } = ""; }
+}
