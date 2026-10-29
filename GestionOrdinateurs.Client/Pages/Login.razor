@@ -5,8 +5,11 @@
 
 <h3>Connexion</h3>
 
-<input @bind="login" placeholder="ex: user1" class="form-control w-25 mb-2" />
-<button class="btn btn-primary" @onclick="SeConnecter">Se connecter</button>
+<div class="w-25">
+    <input @bind="login" placeholder="Identifiant (ex: etudiant)" class="form-control mb-2" />
+    <input @bind="password" type="password" placeholder="Mot de passe" class="form-control mb-2" />
+    <button class="btn btn-primary" @onclick="SeConnecter">Se connecter</button>
+</div>
 
 @if (!string.IsNullOrEmpty(erreur))
 {
@@ -15,6 +18,7 @@
 
 @code {
     private string login = "";
+    private string password = "";
     private string erreur = "";
 
     private async Task SeConnecter()
@@ -22,15 +26,29 @@
         erreur = "";
         try
         {
-            var res = await Http.PostAsJsonAsync("https://localhost:5001/api/authentication/login", login);
-            if (!res.IsSuccessStatusCode)
+            var parameters = new Dictionary<string, string>
             {
-                erreur = "L'utilisateur n'existe pas.";
+                { "grant_type", "password" },
+                { "client_id", "blazor-client" },
+                { "username", login },
+                { "password", password }
+            };
+
+            var content = new FormUrlEncodedContent(parameters);
+            var response = await Http.PostAsync("http://localhost:8180/realms/gestion-ordinateurs/protocol/openid-connect/token", content);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                erreur = "Identifiants invalides ou utilisateur introuvable sur Keycloak.";
                 return;
             }
-            var data = await res.Content.ReadFromJsonAsync<AuthResult>();
-            await Session.SetItemAsStringAsync("token", data!.Token);
-            Nav.NavigateTo("/");
+
+            var data = await response.Content.ReadFromJsonAsync<KeycloakTokenResult>();
+            if (data != null && !string.IsNullOrEmpty(data.access_token))
+            {
+                await Session.SetItemAsStringAsync("token", data.access_token);
+                Nav.NavigateTo("/", forceLoad: true);
+            }
         }
         catch (Exception ex)
         {
@@ -38,5 +56,12 @@
         }
     }
 
-    private class AuthResult { public string Token { get; set; } = ""; }
+    private class KeycloakTokenResult
+    {
+        public string access_token { get; set; } = "";
+        public string token_type { get; set; } = "";
+        public int expires_in { get; set; }
+    }
+
+    
 }
