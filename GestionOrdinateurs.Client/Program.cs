@@ -7,13 +7,20 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
-// HttpClient pour appeler l'API d'authentification
-builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://localhost:5010/") });
-builder.Services.AddBlazoredSessionStorage();
-
+// HttpClient pour appeler la Gateway
 builder.Services.AddScoped(sp => new HttpClient 
 { 
     BaseAddress = new Uri("http://localhost:5010/") 
+});
+
+builder.Services.AddBlazoredSessionStorage();
+
+// Authentification Keycloak (OIDC)
+builder.Services.AddOidcAuthentication(options =>
+{
+    options.ProviderOptions.Authority = "http://localhost:8180/realms/gestion-ordinateurs";
+    options.ProviderOptions.ClientId = "blazor-client";
+    options.ProviderOptions.ResponseType = "code";
 });
 
 await builder.Build().RunAsync();

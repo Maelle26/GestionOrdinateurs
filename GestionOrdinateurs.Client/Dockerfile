@@ -1,16 +1,17 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
-WORKDIR /app
+WORKDIR /src
 
-COPY GestionOrdinateurs.Client/GestionOrdinateurs.Client.csproj ./GestionOrdinateurs.Client/
-COPY GestionOrdinateurs.Shared/GestionOrdinateurs.Shared.csproj ./GestionOrdinateurs.Shared/
-RUN dotnet restore ./GestionOrdinateurs.Client/GestionOrdinateurs.Client.csproj
+COPY ["GestionOrdinateurs.Client/GestionOrdinateurs.Client.csproj", "GestionOrdinateurs.Client/"]
+COPY ["GestionOrdinateurs.Shared/GestionOrdinateurs.Shared.csproj", "GestionOrdinateurs.Shared/"]
+RUN dotnet restore "GestionOrdinateurs.Client/GestionOrdinateurs.Client.csproj"
 
-COPY GestionOrdinateurs.Client/ ./GestionOrdinateurs.Client/
-COPY GestionOrdinateurs.Shared/ ./GestionOrdinateurs.Shared/
-RUN dotnet publish ./GestionOrdinateurs.Client/GestionOrdinateurs.Client.csproj -c Release -o out/wwwroot
+COPY . .
+WORKDIR "/src/GestionOrdinateurs.Client"
+RUN dotnet publish "GestionOrdinateurs.Client.csproj" -c Release -o /app/publish
 
 FROM nginx:alpine AS runtime
-COPY --from=build /app/out/wwwroot /usr/share/nginx/html
+WORKDIR /usr/share/nginx/html
+COPY --from=build /app/publish/wwwroot .
 COPY GestionOrdinateurs.Client/nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 5000
 CMD ["nginx", "-g", "daemon off;"]
